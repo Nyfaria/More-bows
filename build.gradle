@@ -1,5 +1,13 @@
 buildscript {
     repositories {
+    	// bad hack to use local "repository" (read: files).
+    	// this is only used to test building this project against the anatawa12 ForgeGradle snapshot.
+        maven {
+            name = "hack"
+            url uri("${projectDir}/libs")
+        }
+        // uncomment the line below to use a localMaven snapshot
+        // mavenLocal()
         maven { url = "https://jcenter.bintray.com/" }
         maven { url = "https://repo1.maven.org/maven2/" }
         maven {
@@ -12,7 +20,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'com.anatawa12.forge:ForgeGradle:1.2-1.0.+'
+        classpath 'com.anatawa12.forge:ForgeGradle:1.2-1.0.3-SNAPSHOT'
     }
 }
 
@@ -21,8 +29,29 @@ plugins {
     id 'maven-publish'
 }
 
+// more reproducible builds used to verify that compiled code is the same.
+// https://docs.gradle.org/4.9/userguide/working_with_files.html#sec:reproducible_archives
+tasks.withType(AbstractArchiveTask) {
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+}
+
 sourceCompatibility = 1.5
-targetCompatibility = 1.6 //Building for Java 6 should speed up class loading times, due to preverifying classes.
+targetCompatibility = 1.6
+
+/*  New Gradle 6.7 feature for testing, has issues currently.
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(6)
+	}
+}
+*/
+
+/* Sample output:
+Could not determine the dependencies of task ':extractUserDev'.
+> Could not resolve all dependencies for configuration ':userDevPackageDepConfig'.
+   > The new Java toolchain feature cannot be used at the project level in combination with source and/or target compatibility 
+*/
 
 apply plugin: 'java'
 apply plugin: 'forge'
@@ -38,7 +67,7 @@ def modName = project.mod_name
 def build_release = System.getenv("BUILD_RELEASE") == "true"
 
 if (!build_release) {
-    version += ("-SNAPSHOT+" + getTimestampSuffix())
+    version += ("-SNAPSHOT") // Snapshot numbers removed due to influencing compiled code. Builds should now be reproducible for testing.
 }
 
 minecraft {
@@ -46,32 +75,12 @@ minecraft {
     runDir = "run"
 }
 
-// creates a timestamp to be appended to the end of the build
-def getTimestampSuffix() {
-       def date = new Date()
-       return date.format('yyyy-MM-dd_HHmmss')
-}
-
-dependencies {
-    // you may put jars on which you depend on in ./libs
-    // or you may define them like so..
-    //compile "some.group:artifact:version:classifier"
-    //compile "some.group:artifact:version"
-
-    // real examples
-    //compile 'com.mod-buildcraft:buildcraft:6.0.8:dev'  // adds buildcraft to the dev env
-    //compile 'com.googlecode.efficient-java-matrix-library:ejml:0.24' // adds ejml to the dev env
-
-    // for more info...
-    // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
-    // http://www.gradle.org/docs/current/userguide/dependency_management.html
-
-}
-
 processResources {
     // This will ensure that this task is redone when the versions change.
     inputs.property "version", project.version
     inputs.property "mcversion", project.minecraft.version
+    inputs.property "modName", project.mod_name
+    inputs.property "archivesBaseName", project.mod_basename
 
     // Replace values in only mcmod.info.
     filesMatching('mcmod.info') {
@@ -89,7 +98,13 @@ processResources {
     }
 }
 
-task processSource(type: Sync) { // TODO: Remove this
+task processSource(type: Sync) { // TODO: Remove this, it's a huge hack.
+    // This will ensure that this task is redone when the versions change.
+    inputs.property "version", project.version
+    inputs.property "mcversion", project.minecraft.version
+    inputs.property "modName", project.mod_name
+    inputs.property "archivesBaseName", project.mod_basename
+
     from(sourceSets.main.java) {
         // only process this file
         filesMatching('iDiamondhunter/morebowsmod/MoreBowsMod.java') {
@@ -101,38 +116,19 @@ task processSource(type: Sync) { // TODO: Remove this
 }
 
 tasks.withType(JavaCompile) {
-
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
     options.encoding = "UTF-8"
-
-    //TODO: replace with gradle 6.7's new features, will be remove from this script soon
-    /* if (project.JDK6LOC != null && project.JDK6LOC != "" && project.JDK6LOC != [:]) {
-
-        logger.warn('Building {} with Java 6 bootstrap classpath ({})!', name , project.JDK6LOC)
-        // TODO FIX THIS FOR NON-MAC OS JAVA 1.6
-
-        // options.bootClasspath = "$JDK6LOC/jre/lib/rt.jar"
-        // CompileOptions.setBootstrapClasspath = project.JDK6LOC + "/jre/lib/rt.jar"
-        // options.bootstrapClasspath = project.JDK6LOC + "/jre/lib/rt.jar"
-        // options.bootstrapClasspath = files(project.JDK6LOC + "/lib/jsse.jar", project.JDK6LOC + "/jre/lib/rt.jar")
-        options.bootstrapClasspath = files(project.JDK6LOC + "/Classes/classes.jar",
-        project.JDK6LOC + "/Classes/jsse.jar",
-        project.JDK6LOC + "/Classes/alt-rt.jar",
-        project.JDK6LOC + "/Classes/jce.jar")
-    } */
 }
 
 compileJava {
-    //use the processed source with replaced build variables
+    // use the processed source with replaced build variables
+    // TODO: Remove this, it's a huge hack.
     source = processSource.outputs
 }
 
-// properties that instruct gradle on how to create the .jar outputs
 jar {
     baseName = "${project.mod_basename}"
 
-    // don't put in the version.properties file if it exists, and definitely leave out the MCP
-    // (i.e. Minecraft) sources
     exclude 'mcp'
     exclude 'version.properties'
 
@@ -173,7 +169,6 @@ artifacts {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-        // Add any other artifacts here that you would like to publish!
             artifact(jar) {
                 builtBy build
             }
