@@ -36,10 +36,13 @@ tasks.withType(AbstractArchiveTask) {
 	reproducibleFileOrder = true
 }
 
+// Setting sourceCompatibility & targetCompatibility is incompatible with the new Java "toolchain" feature.
+// Comment these lines out if you want to test with Java toolchains.
 sourceCompatibility = 1.5
 targetCompatibility = 1.6
 
-/*  New Gradle 6.7 feature for testing, has issues currently.
+// Here is a Java toolchain to build this mod with a Java 6 compatible JDK.
+/*
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(6)
@@ -47,7 +50,7 @@ java {
 }
 */
 
-/* Sample output:
+/* Sample error output:
 Could not determine the dependencies of task ':extractUserDev'.
 > Could not resolve all dependencies for configuration ':userDevPackageDepConfig'.
    > The new Java toolchain feature cannot be used at the project level in combination with source and/or target compatibility 
