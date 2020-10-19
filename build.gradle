@@ -1,13 +1,14 @@
 buildscript {
     repositories {
-    	// bad hack to use local "repository" (read: files).
-    	// this is only used to test building this project against the anatawa12 ForgeGradle snapshot.
+        // uncomment the line below to use a localMaven snapshot.
+        // mavenLocal()
+
+        // bad hack to use a local repository in the "libs" folder when building with Github actions.
+        // comment this repository out to test with a localMaven snapshot instead.
         maven {
             name = "hack"
             url uri("${projectDir}/libs")
         }
-        // uncomment the line below to use a localMaven snapshot
-        // mavenLocal()
         maven { url = "https://jcenter.bintray.com/" }
         maven { url = "https://repo1.maven.org/maven2/" }
         maven {
@@ -32,8 +33,8 @@ plugins {
 // more reproducible builds used to verify that compiled code is the same.
 // https://docs.gradle.org/4.9/userguide/working_with_files.html#sec:reproducible_archives
 tasks.withType(AbstractArchiveTask) {
-	preserveFileTimestamps = false
-	reproducibleFileOrder = true
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
 }
 
 // Setting sourceCompatibility & targetCompatibility is incompatible with the new Java "toolchain" feature.
@@ -44,16 +45,16 @@ targetCompatibility = 1.6
 // Here is a Java toolchain to build this mod with a Java 6 compatible JDK.
 /*
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(6)
-	}
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(6)
+    }
 }
 */
 
 /* Sample error output:
 Could not determine the dependencies of task ':extractUserDev'.
 > Could not resolve all dependencies for configuration ':userDevPackageDepConfig'.
-   > The new Java toolchain feature cannot be used at the project level in combination with source and/or target compatibility 
+   > The new Java toolchain feature cannot be used at the project level in combination with source and/or target compatibility
 */
 
 apply plugin: 'java'
