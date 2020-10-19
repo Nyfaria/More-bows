@@ -27,8 +27,7 @@ jobs:
         wrapper-cache-enabled: false
         dependencies-cache-enabled: false
         configuration-cache-enabled: false
-        arguments: SetupCIWorkspace
-        arguments: build
+        arguments: SetupCIWorkspace build
     - name: Upload artifacts
       uses: actions/upload-artifact@v2
       with:
