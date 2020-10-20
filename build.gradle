@@ -37,28 +37,24 @@ tasks.withType(AbstractArchiveTask) {
     reproducibleFileOrder = true
 }
 
-// Setting sourceCompatibility & targetCompatibility is incompatible with the new Java "toolchain" feature.
-// Comment these lines out if you want to test with Java toolchains.
-sourceCompatibility = 1.5
-targetCompatibility = 1.6
+apply plugin: 'java'
+apply plugin: 'forge'
 
-// Here is a Java toolchain to build this mod with a Java 6 compatible JDK.
-/*
+// To use Java toolchains, sourceCompatibility & targetCompatibility need to be not set.
+// ForgeGradle sets these previously to build some Forge internals, as it targets Gradle 4.X and above.
+// This workaround sets them back to null. As this is a hack, any issues caused by this are my fault.
+// Side note: This causes the command "gradle build runClient" to crash for unknown reasons,
+// but it doesn't cause "gradle runClient" to crash, so I'm OK with doing this.
+// "gradle clean runClient" also works fine.
+sourceCompatibility = null
+targetCompatibility = null
+
+// This Java toolchain builds this mod with a Java 6 compatible JDK.
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(6)
     }
 }
-*/
-
-/* Sample error output:
-Could not determine the dependencies of task ':extractUserDev'.
-> Could not resolve all dependencies for configuration ':userDevPackageDepConfig'.
-   > The new Java toolchain feature cannot be used at the project level in combination with source and/or target compatibility
-*/
-
-apply plugin: 'java'
-apply plugin: 'forge'
 
 import groovy.json.JsonSlurper
 import groovy.json.JsonOutput
