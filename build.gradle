@@ -43,9 +43,6 @@ apply plugin: 'forge'
 // To use Java toolchains, sourceCompatibility & targetCompatibility need to be not set.
 // ForgeGradle sets these previously to build some Forge internals, as it targets Gradle 4.X and above.
 // This workaround sets them back to null. As this is a hack, any issues caused by this are my fault.
-// Side note: This causes the command "gradle build runClient" to crash for unknown reasons,
-// but it doesn't cause "gradle runClient" to crash, so I'm OK with doing this.
-// "gradle clean runClient" also works fine.
 sourceCompatibility = null
 targetCompatibility = null
 
