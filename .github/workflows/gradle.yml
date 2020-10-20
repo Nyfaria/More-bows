@@ -24,7 +24,7 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
-    - name: help
+    - name: Print all Java enviromental variables for debugging purposes.
       run: |
         set | grep JAVA
     - name: Build with Gradle
