@@ -24,6 +24,9 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
+    - name: help
+      run: |
+        set | grep JAVA
     - name: Build with Gradle
       uses: eskatos/gradle-command-action@v1
       with:
