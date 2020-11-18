@@ -128,7 +128,9 @@ task ('proguard', type: proguard.gradle.ProGuardTask) {
     // Get the location of rt.jar from the provided toolchain.
     // Note to self: probably support building with not outdated versions of Java in the future.
     libraryjars compiler.get().metadata.installationPath.asFile.absolutePath + "/lib/rt.jar"
-    // Dumb MacOS workaround, rt.jar is not in the standard place
+    // Probably linux?
+    libraryjars compiler.get().metadata.installationPath.asFile.absolutePath + "/jre/lib/rt.jar"
+    // Dumb MacOS workaround, rt.jar is not in any standard place
     libraryjars compiler.get().metadata.installationPath.asFile.absolutePath + "/../Classes/classes.jar"
 
     libraryjars project.configurations.minecraft
