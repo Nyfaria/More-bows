@@ -2,6 +2,7 @@ buildscript {
     repositories {
         maven { url = "https://jcenter.bintray.com/" }
         maven { url = "https://repo1.maven.org/maven2/" }
+        maven { url = "https://maven.google.com/" }
         maven {
             name = "forge"
             url = "https://files.minecraftforge.net/maven"
@@ -15,6 +16,7 @@ buildscript {
         classpath ('com.anatawa12.forge:ForgeGradle:1.2-1.0.+') {
             changing = true
         }
+        classpath 'com.guardsquare:proguard-gradle:7.0.1'
     }
 }
 
@@ -39,9 +41,13 @@ sourceCompatibility = null
 targetCompatibility = null
 
 // This Java toolchain builds this mod with a Java 6 compatible JDK.
+def compiler = javaToolchains.compilerFor {
+    languageVersion = JavaLanguageVersion.of(6)
+}
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(6)
+        compiler
     }
 }
 
@@ -110,12 +116,65 @@ task devJar(type: Jar) {
     from sourceSets.main.output
 }
 
+task ('proguard', type: proguard.gradle.ProGuardTask) {
+    // Workaround for ProGuard seemingly not recognising that when the output .jar file doesn't exist
+    outputs.upToDateWhen { false }
+
+    verbose
+
+    injars "build/libs/" + rootProject.name + "-" + version + "-dev.jar"
+    outjars "build/libs/" + rootProject.name + "-" + version + "-dev-proguard.jar"
+
+    // Get the location of rt.jar from the provided toolchain.
+    // Note to self: probably support building with not outdated versions of Java in the future.
+    libraryjars compiler.get().metadata.installationPath.asFile.absolutePath + "/lib/rt.jar"
+    // Dumb MacOS workaround, rt.jar is not in the standard place
+    libraryjars compiler.get().metadata.installationPath.asFile.absolutePath + "/../Classes/classes.jar"
+
+    libraryjars project.configurations.minecraft
+    //libraryjars project.configurations.userDevPackageDepConfig
+    libraryjars project.configurations.minecraftDeps
+
+    // The rest of the configs are in this file
+    configuration 'guard.pro'
+}
+
+def optimisedJar = artifacts.add('archives', file(proguard.outputs.files.singleFile)) {
+    type('Jar')
+    builtBy(proguard)
+    classifier = "proguard"
+}
+
+task remapProguardProperly(dependsOn: 'genSrgs', type: net.minecraftforge.gradle.tasks.user.reobf.ReobfTask) {
+    dependsOn 'proguard'
+    def forgeGradlePlugin = plugins.findPlugin 'forge'
+    exceptorCfg = forgeGradlePlugin.delayedFile net.minecraftforge.gradle.user.UserConstants.EXC_SRG
+    srg = forgeGradlePlugin.delayedFile net.minecraftforge.gradle.user.UserConstants.REOBF_SRG
+    fieldCsv = forgeGradlePlugin.delayedFile net.minecraftforge.gradle.user.UserConstants.FIELD_CSV
+    fieldCsv = forgeGradlePlugin.delayedFile net.minecraftforge.gradle.user.UserConstants.METHOD_CSV
+    mcVersion = forgeGradlePlugin.delayedString '{MC_VERSION}'
+    reobf(optimisedJar) { arg ->
+        def javaConv = project.convention.plugins.get 'java'
+        arg.classpath = javaConv.getSourceSets().getByName('main').compileClasspath
+    }
+    extraSrg = forgeGradlePlugin.extension.srgExtra
+    afterEvaluate {
+        if (forgeGradlePlugin.extension.decomp) {
+            deobfFile = tasks.deobfuscateJar.delayedOutput
+            recompFile = forgeGradlePlugin.delayedDirtyFile forgeGradlePlugin.srcDepName, null, 'jar'
+        }
+    }
+}
+
 // Creates the listed artifacts on building the mod.
 artifacts {
     archives javadocJar
     archives sourcesJar
     archives devJar
+    archives optimisedJar
 }
+
+reobf.dependsOn 'remapProguardProperly'
 
 publishing {
     publications {
@@ -132,6 +191,7 @@ publishing {
             artifact(javadocJar) {
                 builtBy javadocJar
             }
+            artifact optimisedJar
         }
     }
 }
