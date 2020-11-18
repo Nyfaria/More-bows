@@ -1,89 +1,72 @@
 -verbose
 
-# Temporarily turn everything off until I can get this to work correctly, makes everything else in this file completely meaningless.
+# Make sure to check everything, can't hurt.
 
--dontshrink
--dontoptimize
--dontobfuscate
+-dontskipnonpubliclibraryclasses
+-dontskipnonpubliclibraryclassmembers
+-forceprocessing
 
 # We're a bit oldschool
 
--target 1.6
+-target 1.5
 
-# Preserve all annotations.
+# TODO Figure out how to do this but for annotations
+
+-adaptclassstrings
+#-adaptresourcefilenames
+#-adaptresourcefilecontents
+
+# Keep anything that overrides a super method, or is an event handler.
+
+-keepclassmembers,allowobfuscation class * {
+    @java.lang.Override,cpw.mods.fml.common.eventhandler.SubscribeEvent,cpw.mods.fml.common.Mod$EventHandler <methods>;
+}
+
+# Keep all classes with public methods
+
+-keep,allowobfuscation,allowoptimization public class * {
+    public <methods>;
+}
+
+# ProGuard really wants to remove the mod instance and sided proxies. This stops it from doing that.
+
+-keepclassmembers,allowobfuscation class * {
+    private static iDiamondhunter.morebows.MoreBows *;
+}
+
+# These two classes are referred to in String constants inside of annotations. TODO see above (around -adaptclassstrings).
+
+-keep,allowoptimization public class iDiamondhunter.morebows.Client
+-keep,allowoptimization public class iDiamondhunter.morebows.MoreBows
+
+# Keep entities having a consistent name internally for Forge
+
+-keep,allowoptimization public class iDiamondhunter.morebows.entities.**
+
+# Keep all initialisers, because ProGuard keeps trying to make them private.
+
+-keepclassmembers class * { public <init>(...); }
+
+# Don't put the mod into the default package. That would be bad.
+
+-keeppackagenames
+
+# TODO Check if anything else should be kept. Annotations are mandatory, as Forge uses them for reflection.
 
 -keepattributes *Annotation*
 
-# Preserve all public applications.
+# Bonus optimisations
 
-#-keepclasseswithmembers public class * {
-#    public static void main(java.lang.String[]);
-#}
+-optimizationpasses 64
+-mergeinterfacesaggressively
+-overloadaggressively
 
-# Preserve all native method names and the names of their classes.
+# TODO Decide if this is a good idea. allowaccessmodification is probably safe. dontpreverify seems to work on modern JVMs, need to do more exhaustive testing.
 
-#-keepclasseswithmembernames,includedescriptorclasses class * {
-#    native <methods>;
-#}
+-dontpreverify
+-allowaccessmodification
 
-# Preserve the special static methods that are required in all enumeration
-# classes.
+# Debug info
 
-#-keepclassmembers,allowoptimization enum * {
-#    public static **[] values();
-#    public static ** valueOf(java.lang.String);
-#}
-
-# Explicitly preserve all serialization members. The Serializable interface
-# is only a marker interface, so it wouldn't save them.
-# You can comment this out if your application doesn't use serialization.
-# If your code contains serializable classes that have to be backward
-# compatible, please refer to the manual.
-
-#-keepclassmembers class * implements java.io.Serializable {
-#    static final long serialVersionUID;
-#    static final java.io.ObjectStreamField[] serialPersistentFields;
-#    private void writeObject(java.io.ObjectOutputStream);
-#    private void readObject(java.io.ObjectInputStream);
-#    java.lang.Object writeReplace();
-#    java.lang.Object readResolve();
-#}
-
-# bonus optimisations
-
-#-optimizationpasses 64
-#-allowaccessmodification
-#-mergeinterfacesaggressively
-#-overloadaggressively
-#-repackageclasses
-
-# temp
-
--keep public class * {
-    public protected *;
-}
-
--keepparameternames
--renamesourcefileattribute SourceFile
--keepattributes Exceptions,InnerClasses,Signature,Deprecated,
-                SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
-
--keepclasseswithmembernames,includedescriptorclasses class * {
-    native <methods>;
-}
-
--keepclassmembers,allowoptimization enum * {
-    public static **[] values();
-    public static ** valueOf(java.lang.String);
-}
-
--keepclassmembers class * implements java.io.Serializable {
-    static final long serialVersionUID;
-    private static final java.io.ObjectStreamField[] serialPersistentFields;
-    private void writeObject(java.io.ObjectOutputStream);
-    private void readObject(java.io.ObjectInputStream);
-    java.lang.Object writeReplace();
-    java.lang.Object readResolve();
-}
-
-
+-printusage
+-whyareyoukeeping class iDiamondhunter.**
