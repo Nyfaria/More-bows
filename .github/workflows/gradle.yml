@@ -6,10 +6,10 @@ name: Java CI with Gradle (Forge 1.7.10 - snaphot)
 on:
   push:
     branches:
-      - forge-1.7.10
+      - better-proguard
   pull_request:
     branches:
-      - forge-1.7.10
+      - better-proguard
 
 jobs:
   build:
