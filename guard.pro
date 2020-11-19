@@ -1,6 +1,6 @@
 -verbose
 
-# Make sure to check everything, can't hurt.
+# Make sure to check everything always, can't hurt.
 
 -dontskipnonpubliclibraryclasses
 -dontskipnonpubliclibraryclassmembers
