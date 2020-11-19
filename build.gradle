@@ -40,11 +40,12 @@ apply plugin: 'forge'
 sourceCompatibility = null
 targetCompatibility = null
 
-// This Java toolchain builds this mod with a Java 6 compatible JDK.
+// Defines a Java 6 compatible JDK. This is used to get properties requiring a reference to a JDK (rt.jar etc).
 def compiler = javaToolchains.compilerFor {
     languageVersion = JavaLanguageVersion.of(6)
 }
 
+// This Java toolchain builds this mod with a Java 6 compatible JDK.
 java {
     toolchain {
         compiler
@@ -114,6 +115,7 @@ task unmappedJar(type: Jar) {
     from sourceSets.main.output
 }
 
+// This task uses ProGuard to shrink the built .jar's file size and optimise the bytecode. TODO Cleanup.
 task proguard(dependsOn: unmappedJar, type: proguard.gradle.ProGuardTask) {
     verbose
 
@@ -139,6 +141,7 @@ task proguard(dependsOn: unmappedJar, type: proguard.gradle.ProGuardTask) {
 
 def optimisedJar = proguard.outputs.files.singleFile
 
+// This task remaps the ProGuard obfuscated .jar file from MCP mappings into Minecraft mappings. TODO Find a less cursed way to do this that doesn't only half-remap the .jar file, document more.
 task remapProguardProperly(dependsOn: ['genSrgs', 'proguard'], type: net.minecraftforge.gradle.tasks.user.reobf.ReobfTask) {
     def forgeGradlePlugin = plugins.findPlugin 'forge'
 
@@ -163,6 +166,7 @@ task remapProguardProperly(dependsOn: ['genSrgs', 'proguard'], type: net.minecra
     }
 }
 
+// TODO Not sure if this should be kept.
 reobf.dependsOn 'remapProguardProperly'
 
 jar {
